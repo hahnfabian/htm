@@ -15,17 +15,17 @@ class AE(nn.Module):
 
         self.encoder = nn.Sequential(
             nn.Linear(2 * self.latent_dim, hidden_dim),
-            nn.ReLU(),
-            # nn.Linear(self.hidden_dim, self.hidden_dim),
-            # nn.ReLU(),
+            nn.LeakyReLU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+            nn.LeakyReLU(),
             nn.Linear(self.hidden_dim, self.latent_dim),
         )
 
         self.decoder = nn.Sequential(
             nn.Linear(self.latent_dim, self.hidden_dim),
-            nn.ReLU(),
-            # nn.Linear(self.hidden_dim, self.hidden_dim),
-            # nn.ReLU(), 
+            nn.LeakyReLU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+            nn.LeakyReLU(), 
             nn.Linear(self.hidden_dim, 2 * self.latent_dim),
             # nn.Tanh(),
         )

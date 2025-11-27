@@ -85,6 +85,15 @@ class TokenMergeBuffer:
     
     def get_active_mask(self):
         return self.active_mask
+
+    def can_merge(self, max_depth: int) -> bool:
+        """
+        Returns True if merging should continue based on:
+        - more than one active token remains
+        - current merge count is below max_depth
+        """
+        return (self.n_active_tokens > 1) and (self.n_merge < max_depth)
+
   
 
 
@@ -174,76 +183,3 @@ class EarlyStopper:
 
 
 
-
-
-
-################################################################################
-#                                                                              #
-# Old code                                                                     #
-#                                                                              #
-################################################################################
-
-
-class oldTokenUnmergeBuffer:
-
-    def __init__(self, buffer: torch.Tensor, n_original: int, merges: torch.Tensor, active_mask):
-        """
-        root_token: (B, num_active, D) tensor 
-        n_original: int — number of original tokens (N)
-        merges: (B, N-1, 3) tensor — same format as produced by TokenMergeBuffer.get_merge_history()
-        """
-        
-        # assert root_token.ndim == 3, f"Expected (B, num_active, D), got {root_token.shape}"
-        # assert merges.ndim == 3 and merges.shape[1] == n_original - 1,  f"Expected merges of shape (B, N-1, 3), got {merges.shape}"
-
-        B, num_active, D = root_token.shape
-        buffer_len = 0
-        device, dtype = root_token.device, root_token.dtype
-
-        self.buffer = torch.zeros((B, buffer_len, D), dtype=dtype, device=device)
-        self.active_mask = torch.zeros((B, buffer_len), dtype=torch.bool, device=device)
-
-        self.buffer[:, -1, :] = root_token
-        self.active_mask[:, -1] = True
-
-        self.merges = merges.flip(dims=[1])  
-
-        self.B = B
-        self.n_original = n_original
-        self.buffer_len = buffer_len
-        self.ptr = 0  
-
-    def step_unmerge(self, t1_tokens: torch.Tensor, t2_tokens: torch.Tensor):
-        """
-        Perform one unmerge step for all batches.
-        t1_tokens, t2_tokens: (B, D)
-        These are the two tokens produced by unmerging the current active merged token.
-        """
-        assert t1_tokens.shape == t2_tokens.shape == (self.B, self.buffer.shape[-1])
-
-        t1_idx = self.merges[:, self.ptr, 0]
-        t2_idx = self.merges[:, self.ptr, 1]
-        merged_idx = self.merges[:, self.ptr, 2]
-
-        self.buffer[torch.arange(self.B), t1_idx, :] = t1_tokens
-        self.buffer[torch.arange(self.B), t2_idx, :] = t2_tokens
-
-        self.active_mask[torch.arange(self.B), merged_idx] = False
-        self.active_mask[torch.arange(self.B), t1_idx] = True
-        self.active_mask[torch.arange(self.B), t2_idx] = True
-
-        self.ptr += 1    
-
-
-    def get_next_to_unmerge(self):
-        merged_idx = self.merges[:, self.ptr, 2]
-        return self.buffer[torch.arange(self.B), merged_idx, :]
-
-
-    def get_original_tokens(self) -> torch.Tensor:
-        """Return the first N tokens (after full unmerge)."""
-        return self.buffer[:, :self.n_original, :]
-
-    def is_done(self) -> bool:
-        """Check if all unmerges are complete."""
-        return self.ptr >= self.merges.shape[1]
