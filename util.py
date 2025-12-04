@@ -73,7 +73,8 @@ class TokenMergeBuffer:
         self.n_merge += 1
 
     def get_merge_history(self) -> torch.Tensor:
-        return self.merges.clone()
+        # return self.merges.clone()
+        return self.merges[:, : self.merge_ptr, :].clone() # TODO: does this fix??
 
     def _get_active_count(self):
         return self.n_active_tokens
