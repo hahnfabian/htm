@@ -2,7 +2,6 @@ import torch
 
 
 class TokenMergeBuffer:
-
     def __init__(self, original_tokens: torch.Tensor):
         """
         original_tokens: (B, N, D) tensor
@@ -38,7 +37,8 @@ class TokenMergeBuffer:
         _, counts = torch.unique(active_idx[:, 0], return_counts=True)
         n_active = counts[0].item()
         return active_idx[:, 1].reshape(self.B, n_active)
-    
+
+
     def get_active_tokens(self) -> torch.Tensor:
         """(B, n_active, D) tensor of active tokens"""
         idx = self.get_active_indices()  
@@ -178,9 +178,3 @@ class EarlyStopper:
         else:
             self.counter += 1
             return self.counter >= self.patience
-
-
-
-
-
-

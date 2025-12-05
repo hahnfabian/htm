@@ -50,28 +50,28 @@ class AE(nn.Module):
         return self.decoder(z)
     
 
-import torch.nn as nn
 
 class AE_no_lift(nn.Module):
-    def __init__(self, token_dim, hidden_dim):
+    def __init__(self, token_dim, hidden_dim, latent_dim):
         super().__init__()
 
         self.token_dim = token_dim
         self.hidden_dim = hidden_dim
+        self.latent_dim = latent_dim
 
         self.encoder = nn.Sequential(
             nn.Linear(2 * self.token_dim, hidden_dim),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.LeakyReLU(),
-            nn.Linear(self.hidden_dim, self.token_dim),
+            nn.ReLU(),
+            nn.Linear(self.hidden_dim, self.latent_dim),
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(self.token_dim, self.hidden_dim),
-            nn.LeakyReLU(),
+            nn.Linear(self.latent_dim, self.hidden_dim),
+            nn.ReLU(),
             nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.LeakyReLU(), 
+            nn.ReLU(), 
             nn.Linear(self.hidden_dim, 2 * self.token_dim),
         )
 
