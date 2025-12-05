@@ -3,10 +3,8 @@ import torch
 
 class TokenMergeBuffer:
     def __init__(self, original_tokens: torch.Tensor):
-        """
-        original_tokens: (B, N, D) tensor
-        """
         assert original_tokens.ndim == 3, f"Expected (B, N, D), got {original_tokens.shape}"
+        
         B, N, D = original_tokens.shape
         device = original_tokens.device
         dtype = original_tokens.dtype
@@ -16,7 +14,6 @@ class TokenMergeBuffer:
         self.B, self.N, self.D = B, N, D
         self.buffer_len = buffer_len
 
-        # Initialize buffer on same device
         self.buffer = torch.zeros((B, buffer_len, D), dtype=dtype, device=device)
         self.buffer[:, :N] = original_tokens
 
@@ -32,7 +29,6 @@ class TokenMergeBuffer:
         self.n_merge = 0
 
     def get_active_indices(self) -> torch.Tensor:
-        """(B, n_active) tensor of active token indices"""
         active_idx = self.active_mask.nonzero(as_tuple=False)
         _, counts = torch.unique(active_idx[:, 0], return_counts=True)
         n_active = counts[0].item()
@@ -40,7 +36,6 @@ class TokenMergeBuffer:
 
 
     def get_active_tokens(self) -> torch.Tensor:
-        """(B, n_active, D) tensor of active tokens"""
         idx = self.get_active_indices()  
         return self.buffer[torch.arange(self.B)[:, None], idx, :]
 
@@ -74,7 +69,8 @@ class TokenMergeBuffer:
 
     def get_merge_history(self) -> torch.Tensor:
         # return self.merges.clone()
-        return self.merges[:, : self.merge_ptr, :].clone() # TODO: does this fix??
+        ptr =  int(self.merge_ptr)
+        return self.merges[:, :ptr, :].clone() # TODO: does this fix??
 
     def _get_active_count(self):
         return self.n_active_tokens
