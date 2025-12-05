@@ -27,12 +27,31 @@ class TokenMergeBuffer:
         self.n_total_tokens = N
 
         self.n_merge = 0
+        
 
     def get_active_indices(self) -> torch.Tensor:
-        active_idx = self.active_mask.nonzero(as_tuple=False)
-        _, counts = torch.unique(active_idx[:, 0], return_counts=True)
+        """
+        Return (B, n_active) tensor containing the buffer indices of currently
+        active tokens. Ensures all batches have same count but allows different
+        active positions per batch.
+        """
+        B, L = self.active_mask.shape
+        counts = self.active_mask.sum(dim=1)  # per-batch counts
+
+        # Ensure all batches have the same count
+        if not torch.all(counts == counts[0]):
+            raise ValueError(f"Active counts differ across batch: {counts.tolist()}")
+
         n_active = counts[0].item()
-        return active_idx[:, 1].reshape(self.B, n_active)
+
+        # Build an index matrix [ [0..L-1], [0..L-1], ... ]
+        idxs = torch.arange(L, device=self.active_mask.device)[None, :].expand(B, L)
+
+        # Collect active indices per batch
+        act_idx = idxs[self.active_mask].view(B, n_active)
+
+        return act_idx
+
 
 
     def get_active_tokens(self) -> torch.Tensor:
