@@ -61,17 +61,17 @@ class AE_no_lift(nn.Module):
 
         self.encoder = nn.Sequential(
             nn.Linear(2 * self.token_dim, hidden_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(self.hidden_dim, self.latent_dim),
         )
 
         self.decoder = nn.Sequential(
             nn.Linear(self.latent_dim, self.hidden_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.ReLU(), 
+            nn.LeakyReLU(), 
             nn.Linear(self.hidden_dim, 2 * self.token_dim),
         )
 
@@ -80,8 +80,8 @@ class AE_no_lift(nn.Module):
 
     def init_weights(self, m):
         if isinstance(m, nn.Linear):
-            nn.init.xavier_uniform_(m.weight)
-            m.bias.data.fill_(0.001)
+            nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
+            m.bias.data.zero_()
 
     def forward(self, x):
         z = self.encoder(x)
